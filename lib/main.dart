@@ -23,6 +23,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 class NounDisplay extends StatefulWidget {
   @override
   _NounDisplayState createState() => _NounDisplayState();
@@ -31,19 +32,14 @@ class NounDisplay extends StatefulWidget {
 class _NounDisplayState extends State<NounDisplay> {
   late Future<List<Noun>> _nouns;
   late Noun _currentNoun;
+  int _points = 0;
+  int _attempts = 0;
 
   @override
   void initState() {
     super.initState();
     _nouns = _loadNouns();
-    _currentNoun = Noun(
-      id: '',
-      english: '',
-      articleSingular: '',
-      singular: '',
-      articlePlural: '',
-      plural: '',
-    );
+    _showNewNoun();
   }
 
   Future<List<Noun>> _loadNouns() async {
@@ -64,10 +60,20 @@ class _NounDisplayState extends State<NounDisplay> {
   void _checkArticle(String article) {
     String message;
     if (_currentNoun.articleSingular.toLowerCase() == article.toLowerCase()) {
+      setState(() {
+        _points++;
+        _showNewNoun();
+      });
       message = 'Correct!';
     } else {
-      message = 'Oh nein!';
+      String answer = '${_currentNoun.articleSingular} ${_currentNoun.singular}';
+      message = 'Oh nein! is $answer';
+      setState(() {
+        _showNewNoun();
+      });
     }
+
+    _attempts++;
 
     showDialog(
       context: context,
@@ -90,67 +96,99 @@ class _NounDisplayState extends State<NounDisplay> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        FutureBuilder(
-          future: _nouns,
-          builder: (BuildContext context, AsyncSnapshot<List<Noun>> snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-            } else if (snapshot.hasError) {
-              return const Text('Error loading data');
-            } else {
-              // final List<Noun> nouns = snapshot.data ?? [];
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // USA Flag above the English text
+            Image.asset(
+              'img/usa_flag.png', // Ensure you have this image in assets
+              height: 50,
+              width: 50,
+            ),
+            FutureBuilder(
+              future: _nouns,
+              builder:
+                  (BuildContext context, AsyncSnapshot<List<Noun>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return const Text('Error loading data');
+                } else {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _currentNoun.english,
+                        style: const TextStyle(fontSize: 20.0),
+                      ),
+                      const SizedBox(height: 10),
+                      // German Flag above the German text
+                      Image.asset(
+                        'img/german_flag.png',
+                        // Ensure you have this image in assets
+                        height: 50,
+                        width: 50,
+                      ),
+                      Text(
+                        _currentNoun.singular,
+                        style: const TextStyle(fontSize: 24.0),
+                      ),
+                    ],
+                  );
+                }
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Text(
-                    'English: ${_currentNoun.english}',
-                    style: const TextStyle(fontSize: 20.0),
+                  // "Der" Button - Black
+                  ElevatedButton(
+                    onPressed: () {
+                      _checkArticle('Der');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                    ),
+                    child: const Text('Der', style: TextStyle(color: Colors.white)),
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Singular: ${_currentNoun.singular}',
-                    style: const TextStyle(fontSize: 24.0),
+                  // "Die" Button - Red
+                  ElevatedButton(
+                    onPressed: () {
+                      _checkArticle('Die');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    child: const Text('Die', style: TextStyle(color: Colors.white)),
+                  ),
+                  // "Das" Button - Gold
+                  ElevatedButton(
+                    onPressed: () {
+                      _checkArticle('Das');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                    ),
+                    child: const Text('Das', style: TextStyle(color: Colors.white)),
                   ),
                 ],
-              );
-            }
-          },
+              ),
+            ),
+          ],
         ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  _checkArticle('Der');
-                },
-                child: const Text('Der'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _checkArticle('Die');
-                },
-                child: const Text('Die'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _checkArticle('Das');
-                },
-                child: const Text('Das'),
-              ),
-            ],
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: Text(
+            'Points: $_points of $_attempts',
+            style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
           ),
-        ),
-        ElevatedButton(
-          onPressed: _showNewNoun,
-          child: const Text('Next Noun'),
         ),
       ],
     );
   }
 }
-
